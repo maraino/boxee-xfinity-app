@@ -4,7 +4,7 @@
   <name>xfinity.tv</name>
   <version>0.1</version>
   <description>Application to watch xfinity/fancast shows supporting comcast accounts.</description>
-  <thumb>http://static.businessinsider.com/image/4bb4eacb7f8b9aee38210400-400-300/comcast-introduces-xfinity.jpg</thumb>
+  <thumb>https://github.com/maraino/xfinity/raw/master/resources/xfinity-thumb.png</thumb>
   <repository>http://dir.boxee.tv/apps</repository>
   <media>video</media>
   <copyright>Mariano Cano</copyright>
