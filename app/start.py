@@ -26,7 +26,10 @@ def play():
    """
    Play authenticated content with a cookie to be passed to the browser.
    """
-   url = _getSelectedPath(200)
+   list = mc.GetActiveWindow().GetList(200)
+   itemNumber = list.GetFocusedItem()
+   item = list.GetItem(itemNumber)
+   url = item.GetPath()
    url = urllib.quote_plus(url)
 
    config = mc.GetApp().GetLocalConfig()
