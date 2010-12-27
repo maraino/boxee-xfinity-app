@@ -1,0 +1,16 @@
+XFINITY.TV V0.1
+===============
+
+This is an application for Boxee to watch shows in http://www.fancast.com
+
+INSTALLATION
+============
+
+Copy the directory app and rename it to xfinity in the user apps directory of
+your Boxee. That is:
+
+- Linux: ~/.boxee/UserData/apps/
+- Mac OS/X: ~/Library/Application Support/BOXEE/UserData/apps/
+- AppleTV: ~/Library/Application\ Support/BOXEE/UserData/apps/
+- Windows Vista: C:\Users\<windows user name>\AppData\Roaming\BOXEE\userdata\apps\
+- Windows XP: C:\Documents and Settings\<your windows user name>\Application Data\BOXEE\userdata\apps\
