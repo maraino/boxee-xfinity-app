@@ -3,8 +3,7 @@ import re
 import urllib
 import urllib2
 import xml.dom.minidom
-import html5lib
-from html5lib import treebuilders
+from BeautifulSoup import BeautifulSoup
 import myhttp
 
 def login(user, passw):
@@ -58,7 +57,7 @@ def getVideoPath(path):
     Build the url from the video url present in the video links.
     """
     #new_path = path.replace('/videos', '/embed?skipTo=0&skin=xfinity#')
-    new_path = path + '?skipTo=0&skin=xfinity#'
+    new_path = path + '?autoPlay=true&u=c&skipTo=0&skin=xfinity#'
     return new_path
 
 
@@ -90,55 +89,77 @@ def sortVideos():
     pass
 
     
-class XFinityTitle:
+class XFinityTvSeries:
     """
-    Class to parse www.fancast.com episodes
+    Class to parse www.fancast.com full-episodes page like:
+    http://www.fancast.com/tv/House/11954/full-episodes
     """
     
-    def __init__(self, code):
-        self._code = code
-        self._episodes = {}
-        self._url = self.buildFullEpisodesUrl(code)
-        self.parse()
+    def __init__(self, url=None, code=None):
+        self._code = None
+        self._url = None
+        self._episodes = []
+        
+        if url:
+            self._url = url
+            self._code = self.getTitleCode()
+        elif code:
+            self._code = code
+            self._url = self.getEpisodesUrl()
+        else:
+            raise TypeError('Required argument url or code')
 
+        self.parse()
+        
 
     def parse(self):
-        #data = self._get(self._url)
         f = urllib2.urlopen(self._url)
-        parser = html5lib.HTMLParser(tree=treebuilders.getTreeBuilder("dom"))
-        dom = parser.parse(f)
+        data = f.read()
+        episodes = []
+        
+        soup = BeautifulSoup(data)
+        firsts = soup.findAll('td', attrs={'class':'first'})
+        for f in firsts:
+            link = f.find('a', attrs={'class':'fcHover'})
+            desc = f.find('p', attrs={'class':'desc'})
+            d = {
+                'title': link.string.strip(),
+                'description': desc.string.strip(),
+                'image': f.img['src'],
+                'season': '0',
+                'number': '0',
+                'path': 'http://www.fancast.com' + link['href']
+                }
+            episodes.append(d)
 
-        if not dom:
-            return False
+        twos = soup.findAll('td', attrs={'class':'two'})
+        i = 0
+        for t in twos:
+            m = re.search("S(\d+)\s+\|\s+Ep(\d+)", t.string)
+            if m:
+                episodes[i]['season'] = m.group(1)
+                episodes[i]['number'] = m.group(2)
+            i += 1
 
-        tds = dom.getElementsByTagName('td')
-
-        numbers = []
-        names = []
-        hrefs = []
-        for td in tds:
-            if td.attributes.get('class', False) and td.attributes['class'].value == 'first':
-                links = td.getElementsByTagName('a')
-                for link in links:
-                    if link.attributes.get('class', False) and link.attributes['class'].value == 'fcHover':
-                        hrefs.append(link.attributes['href'].value)
-                        names.append(self._getText(link.childNodes))
-
-            elif td.attributes.get('class', False) and td.attributes['class'].value == 'two':
-                numbers.append(self._getText(td.childNodes))
-
-        size = len(numbers)
-        for i in range(size):
-            key = numbers[i] + ' - ' + names[i]
-            self._episodes[key] = 'http://www.fancast.com' + hrefs[i]
-
-
+        for e in episodes:
+            self._episodes.append(XFinityEpisode(data=e))
+        
+            
     def getEpisodes(self):
         return self._episodes
 
 
-    def buildFullEpisodesUrl(self, code):
-        return 'http://www.fancast.com/tv/xxx/%s/full-episodes' % code
+    def getTitleCode(self):
+        if not self._code and self._url:
+            m = re.search("/(\d+)/full-episodes", self._url)
+            self._code = m.group(1)
+        return self._code
+        
+
+    def getEpisodesUrl(self):
+        if not self._url and self._code:
+            self._url = 'http://www.fancast.com/tv/xxx/%s/full-episodes' % self._code
+        return self._url
         
 
     def _getText(self, nodes):
@@ -147,8 +168,94 @@ class XFinityTitle:
             if node.nodeType == node.TEXT_NODE:
                 rc.append(node.data)
         return re.sub("\s+", " ", ''.join(rc)).strip(' ')
-            
+
+
+class XFinityEpisode:
+    
+    def __init__(self, tv_serie_id=None, episode_id=None, data=None):
+        self._tvid = tv_serie_id
+        self._epid = episode_id
+        self._data = {}
+
+        if tv_serie_id and episode_id:
+            self._api = 'http://www.fancast.com/api/video/summary/TvSeries-%s/Video-%s' % (tv_serie_id, episode_id)
+            self._parse(self._api)
+        elif data:
+            self._data = data
+        else:
+            raise TypeError("Parameters data or tv_serie_id and episode_id needs to be defined")
+
+    def _parse(self, url):
+        f = urllib2.urlopen(url)
+        dom = xml.dom.minidom.parse(f)
+
+        self._data['title'] = str(dom.getElementsByTagName('episodeTitle')[0].firstChild.data)
+        self._data['description'] = str(dom.getElementsByTagName('episodeSeasonNumber')[0].firstChild.data)
+        self._data['image'] = str(dom.getElementsByTagName('videoThumbnailUrl')[0].firstChild.data)
+        self._data['season'] = dom.getElementsByTagName('episodeSeasonNumber')[0].firstChild.data
+        self._data['number'] = dom.getElementsByTagName('episodeNumber')[0].firstChild.data
+        self._data['path'] = 'http://www.fancast.com/tv/xxx/%s/%s/yyy/videos' % (tv_serie_id, episode_id)
+
+    def getTitle(self):
+        return self._data['title'].encode("iso-8859-15", "xmlcharrefreplace")
+
+    def getDescription(self):
+        return self._data['description'].encode("iso-8859-15", "xmlcharrefreplace")
+
+    def getImage(self):
+        return self._data['image'].encode("iso-8859-15")
+
+    def getPath(self):
+        return self._data['path'].encode("iso-8859-15")
+
+    def getSeason(self):
+        return int(self._data['season'])
+
+    def getNumber(self):
+        return int(self._data['number'])
+    
+
+class XFinityTitleList:
+    
+    def __init__(self, db='http://www.fancast.com/full_episodes_db.widget'):
+        self._base = 'http://www.fancast.com'
+        self._db = db
+        self._titles = []
+        self._parse()
+
+
+    def _parse(self):
+        f = urllib2.urlopen(self._db)
+        data = f.read()
+        data = re.sub("'([a-z])", "' \\1", data.replace('&', '&amp;'))
+        dom = xml.dom.minidom.parseString(data)
+        elements = dom.getElementsByTagName('b')
+
+        for b in elements:
+            code = str(b.attributes['id'].value)
+            t = (
+                b.firstChild.data.encode("iso-8859-15", "xmlcharrefreplace"),
+                code,
+                self._base + b.attributes['u'].value.encode("iso-8859-15", "xmlcharrefreplace"),
+                self._base + '/api/entity/thumbnail/TvSeries-' + code + '/147/106'
+                )
+            self._titles.append(t)
+
+        # Order by title:
+        self._titles = sorted(self._titles, key=lambda x: x[0].lower())
+
+
+    def getTitles(self):
+        return self._titles
+
 
 if __name__ == '__main__':
-    test = XFinityTitle(11954)
-    print test.getEpisodes()
+    #test = XFinityTitle(code=11954)
+    #print test.getEpisodes()
+    test = XFinityTvSeries(url='http://www.fancast.com/tv/House/11954/full-episodes')
+    print test.getEpisodes()[0].__dict__
+    #test = XFinityTitleList()
+    #titles = test.getTitles()
+    #for t in titles:
+    #    print t[0]
+    

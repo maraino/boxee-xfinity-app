@@ -5,6 +5,7 @@
   <onload lang="python">
 <![CDATA[
 populateLetters()
+populateTitles()
 ]]>
   </onload>
   
@@ -179,7 +180,8 @@ populateLetters()
             <scrollspeed>30</scrollspeed>
           </control>
         </focusedlayout>
-        <content type="url" url="rss://fb1.fancast.com/rss/video-index.xml">
+        <!-- <content type="url" url="rss://fb1.fancast.com/rss/video-index.xml"> -->
+        <content type="action">
           <onclick lang="python"><![CDATA[showEpisodes()]]></onclick>
         </content>
       </control>
@@ -246,7 +248,7 @@ populateLetters()
             <scrollspeed>30</scrollspeed>
           </control>
         </focusedlayout>
-        <content type="url" url="">
+        <content type="action">
           <onclick lang="python"><![CDATA[play()]]></onclick>
         </content>
       </control>

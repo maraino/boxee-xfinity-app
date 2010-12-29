@@ -5,7 +5,7 @@ import myhttp
 import xfinity
 
 app_id = 'xfinity'
-use_rss = True
+use_rss = False
 
 ###############################################################################
 ##  Events                                                                   ##
@@ -60,16 +60,17 @@ def showEpisodes():
     if use_rss:
         mc.GetActiveWindow().GetList(200).SetContentURL(path)
     else:
-        m = re.search('(\d+)\.xml', path)
-        code = m.group(1)
-        print code
-        episodes = xfinity.XFinityTitle(code).getEpisodes()
+        episodes = xfinity.XFinityTvSeries(url=path).getEpisodes()
 
         items = mc.ListItems()
-        for k, v in episodes.iteritems():
-            item = mc.ListItem(mc.ListItem.MEDIA_VIDEO_OTHER)
-            item.SetLabel(str(k))
-            item.SetPath(str(v))
+        for e in episodes:
+            item = mc.ListItem(mc.ListItem.MEDIA_VIDEO_EPISODE)
+            item.SetLabel(e.getTitle())
+            item.SetDescription(e.getDescription())
+            item.SetImage(0, e.getImage())
+            item.SetSeason(e.getSeason())
+            item.SetEpisode(e.getNumber())
+            item.SetPath(e.getPath())
             items.append(item)
         mc.GetActiveWindow().GetList(200).SetItems(items)
 
@@ -162,7 +163,6 @@ def populateLetters():
     for l in abc:
         item = mc.ListItem(mc.ListItem.MEDIA_UNKNOWN)
         item.SetLabel(l)
-        item.SetPath(l)
         items.append(item)
 
     mc.GetActiveWindow().GetList(300).SetItems(items)
@@ -170,7 +170,15 @@ def populateLetters():
 
 def populateTitles():
     items = mc.ListItems()
-    # TODO
+
+    titles = xfinity.XFinityTitleList().getTitles()
+    for t in titles:
+        item = mc.ListItem(mc.ListItem.MEDIA_VIDEO_EPISODE)
+        item.SetLabel(t[0])
+        item.SetPath(t[2])
+        item.SetThumbnail(t[3])
+        items.append(item)
+    
     mc.GetActiveWindow().GetList(100).SetItems(items)
 
 
