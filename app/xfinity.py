@@ -1,3 +1,4 @@
+import mc
 import re
 import urllib
 import urllib2
@@ -62,27 +63,27 @@ def getVideoPath(path):
 
 
 def getBoxeeJSAction():
+    #return 'http://dl.dropbox.com/u/2343163/xfinity/boxee-control.js'
     return ''
-    return 'http://dl.dropbox.com/u/2343163/xfinity/boxee-control.js'
 
 
 def getBoxeeCookie():
     config = mc.GetApp().GetLocalConfig()
 
-   # Check for authentication cookies in the local configuration
-   lfc = ''
-   if config.GetValue('xfinity.cookies.lfc'):
-      lfc = config.GetValue('xfinity.cookies.lfc')
-
-   slfc = ''
-   if config.GetValue('xfinity.cookies.slfc'):
-      slfc = config.GetValue('xfinity.cookies.slfc')
-
-   cookie = ''
-   if lfc or slfc:
-      cookie = 'lfc=%s; slfc=%s; ' % (lfc, slfc)
-
-   return cookie
+    # Check for authentication cookies in the local configuration
+    lfc = ''
+    if config.GetValue('xfinity.cookies.lfc'):
+        lfc = config.GetValue('xfinity.cookies.lfc')
+    
+    slfc = ''
+    if config.GetValue('xfinity.cookies.slfc'):
+        slfc = config.GetValue('xfinity.cookies.slfc')
+    
+    cookie = ''
+    if lfc or slfc:
+        cookie = 'lfc=%s; slfc=%s; ' % (lfc, slfc)
+    
+    return cookie
 
 
 def sortVideos():
