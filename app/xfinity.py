@@ -20,16 +20,16 @@ def login(user, passw):
             'lang': 'en'}
 
     http = myhttp.MyHttp()
-    
+
     # Step 1: Go to fancast
     http.Get('http://www.fancast.com/')
-    
+
     # Step 2: SSO Ping
     data = http.Get('https://idp.comcast.net/idp/startSSO.ping?PartnerSpId=www.fancast.com&CID=fancast_header_signin&TARGET=%2F')
-    
+
     # Step 3: Comcast Login
     data = http.Post('https://login.comcast.net/login', urllib.urlencode(auth))
-    
+
     # Step 4: SSO Ping to Fancast
     dom = xml.dom.minidom.parseString(data)
     forms = dom.getElementsByTagName('form')
@@ -52,6 +52,43 @@ def login(user, passw):
     return cookies
 
 
+def getVideoPath(path):
+    """
+    Build the url from the video url present in the video links.
+    """
+    #new_path = path.replace('/videos', '/embed?skipTo=0&skin=xfinity#')
+    new_path = path + '?skipTo=0&skin=xfinity#'
+    return new_path
+
+
+def getBoxeeJSAction():
+    return ''
+    return 'http://dl.dropbox.com/u/2343163/xfinity/boxee-control.js'
+
+
+def getBoxeeCookie():
+    config = mc.GetApp().GetLocalConfig()
+
+   # Check for authentication cookies in the local configuration
+   lfc = ''
+   if config.GetValue('xfinity.cookies.lfc'):
+      lfc = config.GetValue('xfinity.cookies.lfc')
+
+   slfc = ''
+   if config.GetValue('xfinity.cookies.slfc'):
+      slfc = config.GetValue('xfinity.cookies.slfc')
+
+   cookie = ''
+   if lfc or slfc:
+      cookie = 'lfc=%s; slfc=%s; ' % (lfc, slfc)
+
+   return cookie
+
+
+def sortVideos():
+    pass
+
+    
 class XFinityTitle:
     """
     Class to parse www.fancast.com episodes

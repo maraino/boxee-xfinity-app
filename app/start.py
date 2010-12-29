@@ -7,73 +7,43 @@ import xfinity
 app_id = 'xfinity'
 use_rss = True
 
-def log(s):
-   """
-   Log a message using boxee logger.
-   """
-   message = '@xfinity: %s' % str(s)
-   mc.LogInfo(message)
+###############################################################################
+##  Events                                                                   ##
+###############################################################################
 
-
-def alert(msg):
-   """
-   Show a dialog with a simple message.
-   """
-   mc.ShowDialogOk('xfinity', msg)
-   
-    
 def play():
    """
    Play authenticated content with a cookie to be passed to the browser.
    """
-   list = mc.GetActiveWindow().GetList(200)
-   itemNumber = list.GetFocusedItem()
-   item = list.GetItem(itemNumber)
+   item = _getSelectedItem(200)
    url = item.GetPath()
-   url = urllib.quote_plus(url)
-
-   config = mc.GetApp().GetLocalConfig()
-
-   # Check for authentication cookies in the local configuration
-   lfc = ''
-   if config.GetValue('xfinity.cookies.lfc'):
-      lfc = config.GetValue('xfinity.cookies.lfc')
-
-   slfc = ''
-   if config.GetValue('xfinity.cookies.slfc'):
-      slfc = config.GetValue('xfinity.cookies.slfc')
-
-   cookie = urllib.quote_plus('lfc=%s; slfc=%s; ' % (lfc, slfc))
-
-   # Build flash link with cookies
-   flash_link = 'flash://www.fancast.com/src=%s&bx-cookie=%s'
-   item_path = flash_link % (url, cookie)
+   url = urllib.quote_plus(xfinity.getVideoPath(url))
+   jsactions = urllib.quote_plus(xfinity.getBoxeeJSAction())
+   cookie = urllib.quote_plus(xfinity.getBoxeeCookie())
+      
+   # Build flash link with cookie and jsactions url
+   flash_link = 'flash://www.fancast.com/src=%s&bx-cookie=%s&bx-jsactions=%s'
+   item_path = flash_link % (url, cookie, jsactions)
 
    # Play content
    item.SetPath(item_path)
    mc.GetPlayer().Play(item)
 
 
-def _getSelectedPath(list):
+def jumpToLetter():
    """
-   Get the path of the selected element in a list
+   Jump to selected letter.
    """
-   list = mc.GetActiveWindow().GetList(list)
-   itemNumber = list.GetFocusedItem()
-   item = list.GetItem(itemNumber)
-   return item.GetPath()
-
-
-def _hideShowControl(hide, show):
-   """
-   Hide a control and show another.
-   """
-   control = mc.GetWindow(14000).GetControl(hide)
-   control.SetVisible(False)
-
-   control = mc.GetWindow(14000).GetControl(show)
-   control.SetVisible(True)
-   control.SetFocus()
+   item = _getSelectedItem(300)
+   list = mc.GetActiveWindow().GetList(100)
+   
+   letter = item.GetLabel()
+   if letter == '*':
+      list.SetFocusedItem(0)
+   elif letter == '#':
+      list.JumpToLetter('0')
+   else:
+      list.JumpToLetter(letter)
 
 
 def showTitles():
@@ -176,7 +146,83 @@ GNU General Public License v2.0
    mc.ShowDialogOk('xfinity - about', about)
 
 
-#
-# Main: activate main window
-# 
+###############################################################################
+##  Tasks                                                                    ##
+###############################################################################
+def populateLetters():
+   """
+   Add list items with each letter in the list 300
+   """
+   abc = ['*', '#', 'A', 'B', 'C',
+          'D', 'E', 'F', 'G', 'H',
+          'I', 'K', 'L', 'M', 'N',
+          'O', 'P', 'Q', 'R', 'S',
+          'T', 'V', 'X', 'Y', 'Z']
+
+   items = mc.ListItems()
+   for l in abc:
+      item = mc.ListItem(mc.ListItem.MEDIA_UNKNOWN)
+      item.SetLabel(l)
+      item.SetPath(l)
+      items.append(item)
+      
+   mc.GetActiveWindow().GetList(300).SetItems(items)
+
+
+def populateTitles():
+   items = mc.ListItems()
+   # TODO
+   mc.GetActiveWindow().GetList(100).SetItems(items)
+
+
+###############################################################################
+##  Helpers                                                                  ##
+###############################################################################
+def log(s):
+   """
+   Log a message using boxee logger.
+   """
+   message = '@xfinity: %s' % str(s)
+   mc.LogInfo(message)
+
+
+def alert(msg):
+   """
+   Show a dialog with a simple message.
+   """
+   mc.ShowDialogOk('xfinity', msg)
+
+def _getSelectedItem(list):
+   """
+   Get the selected item in a list
+   """
+   list = mc.GetActiveWindow().GetList(list)
+   itemNumber = list.GetFocusedItem()
+   return list.GetItem(itemNumber)
+
+
+def _getSelectedPath(list):
+   """
+   Get the path of the selected element in a list
+   """
+   item = _getSelectedItem(list)
+   return item.GetPath()
+
+
+def _hideShowControl(hide, show):
+   """
+   Hide a control and show another.
+   """
+   control = mc.GetWindow(14000).GetControl(hide)
+   control.SetVisible(False)
+
+   control = mc.GetWindow(14000).GetControl(show)
+   control.SetVisible(True)
+   control.SetFocus()
+   
+
+###############################################################################
+##  Main: activate main window                                               ##
+###############################################################################
 mc.ActivateWindow(14000)
+
